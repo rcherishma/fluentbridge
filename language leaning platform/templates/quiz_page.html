@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz - {{ language.name }} - FluentBridge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dashboard">
+        <div class="navbar-brand">
+            <a href="/dashboard" class="logo">FluentBridge</a>
+        </div>
+        <div class="breadcrumb">
+            <a href="/dashboard">Dashboard</a> → {{ language.name }} Quiz
+        </div>
+        <div class="navbar-right">
+            <button class="btn btn-outline btn-small dark-toggle" type="button" onclick="toggleDarkMode()">🌙</button>
+            <a href="/logout" class="btn btn-outline btn-small">Logout</a>
+        </div>
+    </nav>
+
+    <div class="quiz-container">
+        <div class="quiz-header">
+            <h1>{{ language.flag }} {{ language.name }} Quiz</h1>
+            <p>Test your knowledge with these questions</p>
+            <div class="quiz-stats">
+                <span class="question-counter">Question <span id="current">1</span> of {{ questions|length }}</span>
+            </div>
+        </div>
+
+        <form id="quizForm" class="quiz-form">
+            <input type="hidden" name="language_id" value="{{ language.id }}">
+
+            {% for question in questions %}
+            <div class="quiz-question" id="q{{ question.id }}"
+                style="display: {% if loop.first %}block{% else %}none{% endif %};">
+                <h3>{{ loop.index }}. {{ question.question }}</h3>
+                <div class="quiz-options">
+                    {% for option in question.options %}
+                    <label class="quiz-option">
+                        <input type="radio" name="q{{ question.id }}" value="{{ option }}" required>
+                        <span>{{ option }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="quiz-nav">
+                    {% if not loop.first %}
+                    <button type="button" class="btn btn-outline btn-small" onclick="prevQuestion()">← Previous</button>
+                    {% endif %}
+                    {% if not loop.last %}
+                    <button type="button" class="btn btn-primary btn-small" onclick="nextQuestion()">Next →</button>
+                    {% else %}
+                    <button type="button" class="btn btn-primary btn-small" onclick="submitQuiz()">Submit Quiz</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </form>
+
+        <div id="results" class="quiz-results" style="display: none;">
+            <h2>Quiz Complete! 🎉</h2>
+            <div class="score-display">
+                <div class="score-circle">
+                    <span id="scorePercentage">0</span>%
+                </div>
+                <p id="scoreMessage"></p>
+            </div>
+            <a href="/lessons/{{ language.id }}" class="btn btn-primary">Back to Lessons</a>
+            <a href="/dashboard" class="btn btn-outline">Dashboard</a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        let currentQuestion = 1;
+        const totalQuestions = {{ questions| length }};
+
+        function nextQuestion() {
+            if (currentQuestion < totalQuestions) {
+                showQuestion(currentQuestion + 1);
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 1) {
+                showQuestion(currentQuestion - 1);
+            }
+        }
+
+        function showQuestion(n) {
+            const questions = document.querySelectorAll('.quiz-question');
+            questions.forEach(q => q.style.display = 'none');
+
+            if (n >= 1 && n <= totalQuestions) {
+                currentQuestion = n;
+                questions[n - 1].style.display = 'block';
+                document.getElementById('current').textContent = n;
+                window.scrollTo(0, 0);
+            }
+        }
+
+        function submitQuiz() {
+            const form = document.getElementById('quizForm');
+            const formData = new FormData(form);
+            const answers = {};
+
+            const questions = document.querySelectorAll('.quiz-question');
+            questions.forEach((q, index) => {
+                const input = q.querySelector('input:checked');
+                if (input) {
+                    answers[input.name.replace('q', '')] = input.value;
+                }
+            });
+
+            // Submit answers to server
+            fetch('/submit-quiz', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    language_id: {{ language.id }},
+                answers: answers
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayResults(data);
+            });
+        }
+
+        function displayResults(data) {
+            document.getElementById('quizForm').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
+            const percentage = Math.round(data.percentage);
+            document.getElementById('scorePercentage').textContent = percentage;
+
+            let message = '';
+            if (percentage === 100) {
+                message = `Perfect! You answered all ${data.total} questions correctly! 🌟`;
+            } else if (percentage >= 80) {
+                message = `Excellent! You scored ${data.score}/${data.total}. Keep it up! 🚀`;
+            } else if (percentage >= 60) {
+                message = `Good job! You scored ${data.score}/${data.total}. More practice needed! 📚`;
+            } else {
+                message = `You scored ${data.score}/${data.total}. Don't worry, keep practicing! 💪`;
+            }
+
+            document.getElementById('scoreMessage').textContent = message;
+        }
+    </script>
+
+</body>
+
+</html>

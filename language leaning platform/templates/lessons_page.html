@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lessons - {{ language.name }} - FluentBridge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body data-language="{{ language.name }}">
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dashboard">
+        <div class="navbar-brand">
+            <a href="/dashboard" class="logo">FluentBridge</a>
+        </div>
+        <div class="breadcrumb">
+            <a href="/dashboard">Dashboard</a> → {{ language.name }} Lessons
+        </div>
+        <div class="navbar-right">
+            <button class="btn btn-outline btn-small dark-toggle" type="button" onclick="toggleDarkMode()">🌙</button>
+            <a href="/logout" class="btn btn-outline btn-small">Logout</a>
+        </div>
+    </nav>
+
+    <div class="lesson-container">
+        <div class="lesson-header">
+            <h1>{{ language.flag }} {{ language.name }} Lessons</h1>
+            <div class="lesson-stats">
+                <span>Level: {{ user_progress.level if user_progress else 'Beginner' }}</span>
+                <span>Progress: {{ user_progress.lessons_completed if user_progress else 0 }} lessons</span>
+                <span>Streak: {{ user_progress.streak if user_progress else 0 }} 🔥</span>
+            </div>
+        </div>
+
+        <div class="lesson-content">
+            {% for level in levels %}
+            <div class="level-section">
+                <h2 class="level-title">{{ level }}</h2>
+
+                {% for category, category_lessons in lessons_data[level].items() %}
+                <div class="category-section">
+                    <h3>{{ category }}</h3>
+                    <div class="lessons-list">
+                        {% for lesson in category_lessons %}
+                        <div class="lesson-card">
+                            <div class="lesson-word">{{ lesson.word }}</div>
+                            <div class="lesson-meaning">{{ lesson.meaning }}</div>
+                            <div class="lesson-example">
+                                <small>Example: {{ lesson.example }}</small>
+                            </div>
+                            <audio controls preload="none" src="{{ url_for('pronounce', word=lesson.word, lang=language.name) }}">
+                                Your browser does not support audio playback.
+                            </audio>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="lesson-footer">
+            <a href="/quiz/{{ language.id }}" class="btn btn-primary btn-large">Take Quiz Now →</a>
+            <a href="/dashboard" class="btn btn-outline">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                speechSynthesis.speak(utterance);
+            }
+        }
+    </script>
+
+</body>
+
+</html>

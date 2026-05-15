@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Lessons - {{ lang }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="container">
+        <nav>
+            <a href="/">Home</a>
+            <a href="/lessons/{{ lang }}">Lessons</a>
+        </nav>
+
+        <h1>{{ lang }} Lessons</h1>
+
+        {% for lesson in lessons %}
+        <div class="card">
+            <h2>{{ lesson.title }}</h2>
+            <ul>
+                {% for item in lesson.content %}
+                <li>
+                    <span>{{ item }}</span>
+                    <button class="btn" onclick="speak('{{ item.split(' = ')[1] }}')">🔊</button>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+
+        <a href="/quiz/{{ lang }}" class="btn">Take Quiz</a>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - FluentBridge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="navbar navbar-dashboard">
+        <div class="navbar-brand">
+            <a href="/dashboard" class="logo">FluentBridge</a>
+        </div>
+        <div class="breadcrumb">
+            <a href="/dashboard">Dashboard</a> → My Profile
+        </div>
+        <div class="navbar-right">
+            <a href="/dashboard" class="btn btn-outline btn-small">Dashboard</a>
+            <a href="/logout" class="btn btn-outline btn-small">Logout</a>
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <section class="dashboard-section dashboard-intro">
+            <div class="dashboard-hero">
+                <div>
+                    <p class="eyebrow">Hello, {{ user.name }}</p>
+                    <h2>Profile Summary</h2>
+                    <p>Manage your account and track your progress across languages.</p>
+                </div>
+                <div class="selected-language-card">
+                    <div class="language-header">
+                        {% if user.profile_photo %}
+                        <img src="{{ url_for('static', filename='uploads/' + user.profile_photo) }}" alt="Profile Photo" class="profile-photo">
+                        {% else %}
+                        <span class="flag large">👤</span>
+                        {% endif %}
+                        <div>
+                            <p class="eyebrow">Profile</p>
+                            <h3>{{ user.name }}</h3>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span>Email</span>
+                            <strong>{{ user.email }}</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>Joined</span>
+                            <strong>{{ user.created_at.split(' ')[0] if user.created_at else 'N/A' }}</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>Completed Languages</span>
+                            <strong>{{ completed_languages }}</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>Average Score</span>
+                            <strong>{{ average_score }}%</strong>
+                        </div>
+                    </div>
+                    <div class="achievements-section">
+                        <p class="eyebrow">Achievements</p>
+                        <div class="achievements-grid">
+                            {% for achievement in achievements %}
+                            <div class="achievement-badge">
+                                <span>{{ achievement.icon }}</span>
+                                <strong>{{ achievement.title }}</strong>
+                                <p>{{ achievement.subtitle }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% if selected_language %}
+                <div class="selected-language-card">
+                    <div class="language-header">
+                        <span class="flag large">{{ selected_language.flag }}</span>
+                        <div>
+                            <p class="eyebrow">Current Focus</p>
+                            <h3>{{ selected_language.name }}</h3>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="profile-edit-card">
+                <h2>Edit Profile</h2>
+                {% if message %}
+                <div class="success-message">{{ message }}</div>
+                {% endif %}
+                {% if error %}
+                <div class="error-message">{{ error }}</div>
+                {% endif %}
+                <form method="POST" action="/profile" class="auth-form profile-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="photo">Profile Photo</label>
+                        <input type="file" id="photo" name="photo" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" value="{{ user.name }}" required placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" value="{{ user.email }}" required placeholder="you@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">New Password</label>
+                        <input type="password" id="password" name="password" placeholder="Leave blank to keep current password">
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Save Changes</button>
+                </form>
+                <form method="POST" action="/profile" class="auth-form profile-form" onsubmit="return confirm('Delete your account permanently? This cannot be undone.');">
+                    <input type="hidden" name="action" value="delete">
+                    <button type="submit" class="btn btn-outline btn-block" style="margin-top:1rem;">Delete Account</button>
+                </form>
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+            <h2>Progress Overview</h2>
+            <div class="lesson-content">
+                <div class="lessons-list profile-list">
+                    {% for row in progress_rows %}
+                    <div class="lesson-card">
+                        <div class="lesson-word">{{ row.language_flag }} {{ row.language_name }}</div>
+                        <div class="lesson-meaning">Level: {{ row.level or 'Beginner' }}</div>
+                        <div class="lesson-example">Score: {{ row.score }}% • Streak: {{ row.streak }} days</div>
+                        <div class="lesson-example">Lessons: {{ row.lessons_completed }} • Quizzes: {{ row.quizzes_completed }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

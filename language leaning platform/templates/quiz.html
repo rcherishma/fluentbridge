@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Quiz - {{ lang }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="container">
+        <nav>
+            <a href="/">Home</a>
+            <a href="/lessons/{{ lang }}">Lessons</a>
+        </nav>
+
+        <h1>{{ lang }} Quiz</h1>
+
+        <form method="POST">
+            {% for question in questions %}
+            {% set q_index = loop.index0 %}
+
+            <div class="quiz-card">
+                <p><b>{{ question.question }}</b></p>
+
+                {% for option in question.options %}
+                <label class="option">
+                    <input type="radio" name="q{{ q_index }}" value="{{ option }}" required>
+                    {{ option }}
+                </label><br>
+                {% endfor %}
+            </div>
+
+            {% endfor %}
+
+            <button type="submit" class="btn">Submit Quiz</button>
+        </form>
+
+        {% if score is not none %}
+        <div class="card">
+            <h2>Your Score: {{ score }}/{{ questions|length }}</h2>
+            {% if score == questions|length %}
+            <p>🎉 Perfect! Well done!</p>
+            {% elif score > questions|length // 2 %}
+            <p>👍 Good job! Keep practicing.</p>
+            {% else %}
+            <p>📚 Keep learning! You'll get better.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+</body>
+
+</html>

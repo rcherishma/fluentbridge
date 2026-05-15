@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - FluentBridge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dashboard">
+        <div class="navbar-brand">
+            <h1 class="logo">FluentBridge</h1>
+        </div>
+        <div class="navbar-right">
+            <span class="user-greeting">Hello, {{ user.name }}! 👋</span>
+            <a href="/profile" class="btn btn-outline btn-small">Profile</a>
+            <button class="btn btn-outline btn-small dark-toggle" type="button" onclick="toggleDarkMode()">🌙</button>
+            <a href="/logout" class="btn btn-outline">Logout</a>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <div class="dashboard-container">
+        <section class="dashboard-section dashboard-intro">
+            <div class="dashboard-hero">
+                <div>
+                    <p class="eyebrow">Welcome back, {{ user.name }}!</p>
+                    <h2>Your language learning hub</h2>
+                    <p>Pick a language, track your progress, and keep building streaks.</p>
+                </div>
+                {% if selected_language %}
+                <div class="selected-language-card">
+                    <div class="language-header">
+                        <span class="flag large">{{ selected_language.flag }}</span>
+                        <div>
+                            <p class="eyebrow">Selected Language</p>
+                            <h3>{{ selected_language.name }}</h3>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span>Level</span>
+                            <strong>{{ selected_progress.level if selected_progress else 'Beginner' }}</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>Streak</span>
+                            <strong>{{ selected_progress.streak if selected_progress else 0 }} days</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>Score</span>
+                            <strong>{{ selected_progress.score if selected_progress else 0 }}%</strong>
+                        </div>
+                        <div class="stat-card">
+                            <span>Badge</span>
+                            <strong>{{ badge }}</strong>
+                        </div>
+                    </div>
+                    {% if recommended_lesson %}
+                    <div class="stats-grid" style="margin-top:1rem;">
+                        <div class="stat-card" style="grid-column: span 2;">
+                            <span>Recommended Lesson</span>
+                            <strong>{{ recommended_lesson.word }} — {{ recommended_lesson.category }}</strong>
+                            <p>{{ recommended_lesson.meaning }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="achievements-section">
+                        <p class="eyebrow">Achievements</p>
+                        <div class="achievements-grid">
+                            {% for achievement in achievements %}
+                            <div class="achievement-badge">
+                                <span>{{ achievement.icon }}</span>
+                                <strong>{{ achievement.title }}</strong>
+                                <p>{{ achievement.subtitle }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="dashboard-actions">
+                        <a href="/lessons/{{ selected_language.id }}" class="btn btn-primary">View Lessons</a>
+                        <a href="/quiz/{{ selected_language.id }}" class="btn btn-outline">Take Quiz</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+            <h2>Choose a Language</h2>
+            <div class="languages-grid dashboard-grid">
+                {% for language in languages %}
+                <a href="{{ url_for('select_language', lang_id=language.id) }}" class="language-card dashboard-card">
+                    <div class="flag large">{{ language.flag }}</div>
+                    <h3>{{ language.name }}</h3>
+                    {% if progress.get(language.id) %}
+                        <div class="progress-info">
+                            <p class="level">{{ progress[language.id].level }}</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ progress[language.id].score }}%"></div>
+                            </div>
+                            <p class="score">{{ progress[language.id].score }}%</p>
+                        </div>
+                    {% else %}
+                        <p class="status">Not started</p>
+                    {% endif %}
+                    <p class="start-btn">Select →</p>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
