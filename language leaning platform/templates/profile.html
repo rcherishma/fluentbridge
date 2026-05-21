@@ -43,10 +43,10 @@
                         </div>
                     </div>
                     <div class="stats-grid">
-                        <div class="stat-card">
-                            <span>Email</span>
-                            <strong>{{ user.email }}</strong>
-                        </div>
+                       <div class="stat-card">
+    <span>Email</span>
+    <strong class="email-text">{{ user.email }}</strong>
+</div>
                         <div class="stat-card">
                             <span>Joined</span>
                             <strong>{{ user.created_at.split(' ')[0] if user.created_at else 'N/A' }}</strong>

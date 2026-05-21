@@ -6,7 +6,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
 
     <div class="container">
@@ -18,16 +17,28 @@
         <h1>{{ lang }} Lessons</h1>
 
         {% for lesson in lessons %}
-        <div class="card">
-            <h2>{{ lesson.title }}</h2>
-            <ul>
+        <div class="lesson-card">
+
+            <h2 class="lesson-word">{{ lesson.title }}</h2>
+
+            <ul class="lesson-list">
                 {% for item in lesson.content %}
-                <li>
-                    <span>{{ item }}</span>
-                    <button class="btn" onclick="speak('{{ item.split(' = ')[1] }}')">🔊</button>
+                <li class="lesson-item">
+
+                    <span class="lesson-meaning">
+                        {{ item }}
+                    </span>
+
+                    <div class="audio-wrapper">
+                        <button class="btn" onclick="speak('{{ item.split(' = ')[1] }}')">
+                            🔊 Play Audio
+                        </button>
+                    </div>
+
                 </li>
                 {% endfor %}
             </ul>
+
         </div>
         {% endfor %}
 
