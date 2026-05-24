@@ -70,31 +70,5 @@
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-  cript>
-    function speak(text) {
-        if ('speechSynthesis' in window) {
-
-            const utterance = new SpeechSynthesisUtterance(text);
-
-            utterance.rate = 0.9;
-            utterance.pitch = 1;
-
-            speechSynthesis.speak(utterance);
-        }
-    }
-</script>
-
-<audio id="audioPlayer"></audio>
-
-<script>
-    function playPronunciation(language, text) {
-
-        const audio = document.getElementById("audioPlayer");
-
-        audio.src = "/speak/" + language + "/" + encodeURIComponent(text);
-
-        audio.play();
-    }
-</script>
 </body>
 </html>

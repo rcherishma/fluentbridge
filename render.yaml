@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: fluentbridge
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --chdir language_leaning_platform app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/language_leaning_platform/database.db

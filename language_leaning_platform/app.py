@@ -9,21 +9,19 @@ import sqlite3
 import os
 import json
 import random
-import subprocess
-import tempfile
 from io import BytesIO
 from datetime import datetime, timedelta
 from functools import wraps
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.secret_key = 'your-secret-key-change-this-in-production'
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-this')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Database path
-DATABASE = 'database.db'
+DATABASE = os.environ.get('DATABASE_PATH', os.path.join(app.root_path, 'database.db'))
 
 # ======================== DATABASE SETUP ========================
 
@@ -94,9 +92,7 @@ def get_db():
 # ======================== AUTHENTICATION HELPERS ========================
 from gtts import gTTS
 
-@app.route('/speak/<language>/<text>')
-def speak(language, text):
-
+def get_gtts_lang_code(language):
     language_codes = {
         'English': 'en',
         'Spanish': 'es',
@@ -113,14 +109,21 @@ def speak(language, text):
         'Russian': 'ru',
         'Turkish': 'tr'
     }
+    return language_codes.get(language, 'en')
 
-    lang_code = language_codes.get(language, 'en')
 
+def synthesize_speech(text, language):
+    lang_code = get_gtts_lang_code(language)
     tts = gTTS(text=text, lang=lang_code)
-
     audio_buffer = BytesIO()
     tts.write_to_fp(audio_buffer)
     audio_buffer.seek(0)
+    return audio_buffer
+
+
+@app.route('/speak/<language>/<text>')
+def speak(language, text):
+    audio_buffer = synthesize_speech(text, language)
 
     return send_file(
         audio_buffer,
@@ -293,6 +296,9 @@ def populate_sample_data():
         lang_row = c.fetchone()
         if lang_row:
             lang_id = lang_row[0]
+            c.execute('SELECT COUNT(*) FROM quiz_questions WHERE language_id = ?', (lang_id,))
+            if c.fetchone()[0] > 0:
+                continue
             words = ['Hello', 'Goodbye', 'Thank you', 'Water']
             for word in words:
                 question = f'What is the {lang_name} word for {word}?'
@@ -781,6 +787,7 @@ def index():
             <p>&copy; 2026 FluentBridge. All rights reserved.</p>
         </footer>
 
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const slider = document.querySelector('.language-slider');
@@ -1209,56 +1216,11 @@ def pronounce():
     if not word:
         return redirect(request.referrer or url_for('dashboard'))
 
-    voice_code = get_voice_lang_code(language)
-    temp_wav = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
-    temp_path = temp_wav.name
-    temp_wav.close()
-
-    temp_txt = tempfile.NamedTemporaryFile(delete=False, suffix='.txt', mode='w', encoding='utf-8')
-    temp_txt.write(word)
-    temp_txt_path = temp_txt.name
-    temp_txt.close()
-
-    safe_path = temp_path.replace("'", "''")
-    safe_txt_path = temp_txt_path.replace("'", "''")
-    voice_prefix = voice_code.split('-')[0]
-    ps_script = (
-        "Add-Type -AssemblyName System.Speech; "
-        "$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
-        "$voice = $synth.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -like '*" + voice_prefix + "*' -or $_.VoiceInfo.Culture.TwoLetterISOLanguageName -eq '" + voice_prefix + "' } | Select-Object -First 1; "
-        "if (-not $voice) { $voice = $synth.GetInstalledVoices() | Where-Object { $_.VoiceInfo.Culture.Name -like '*en*' -or $_.VoiceInfo.Culture.TwoLetterISOLanguageName -eq 'en' } | Select-Object -First 1 }; "
-        "if ($voice) { $synth.SelectVoice($voice.VoiceInfo.Name) }; "
-        "$text = Get-Content -Raw -Path '" + safe_txt_path + "'; "
-        "$synth.SetOutputToWaveFile('" + safe_path + "'); "
-        "$synth.Speak($text); "
-        "$synth.Dispose();"
-    )
-
     try:
-        subprocess.run(
-            [
-                'powershell.exe',
-                '-NoProfile',
-                '-ExecutionPolicy',
-                'Bypass',
-                '-Command',
-                ps_script
-            ],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-
-        with open(temp_path, 'rb') as audio_file:
-            audio_data = audio_file.read()
-        return send_file(BytesIO(audio_data), mimetype='audio/wav', as_attachment=False)
-    except subprocess.CalledProcessError as exc:
-        return jsonify({'error': 'TTS generation failed', 'details': exc.stderr}), 500
-    finally:
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
-        if os.path.exists(temp_txt_path):
-            os.unlink(temp_txt_path)
+        audio_buffer = synthesize_speech(word, language)
+        return send_file(audio_buffer, mimetype='audio/mpeg', as_attachment=False)
+    except Exception as exc:
+        return jsonify({'error': 'TTS generation failed', 'details': str(exc)}), 500
 
 @app.route('/quiz/<int:lang_id>')
 @login_required
@@ -1387,16 +1349,22 @@ def server_error(error):
 
 # ======================== APP INITIALIZATION ========================
 
-if __name__ == '__main__':
-    # Initialize database first
+_app_initialized = False
+
+def initialize_app():
+    """Prepare folders and seed data for local and production servers."""
+    global _app_initialized
+    if _app_initialized:
+        return
+
     init_db()
-    
-    # Create uploads folder if it doesn't exist
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    
-    # Populate sample data
     populate_sample_data()
-    
+    _app_initialized = True
+
+initialize_app()
+
+if __name__ == '__main__':
     # Open browser automatically
     import webbrowser
     webbrowser.open('http://localhost:5000')

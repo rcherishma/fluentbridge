@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.env
+instance/
+language_leaning_platform/static/uploads/
+.codex_run_deps/
+flask_start*.log
